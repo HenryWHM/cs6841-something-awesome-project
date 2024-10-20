@@ -34,9 +34,9 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
-                <button className='loginBtn'>SIGN IN</button>
+                <button className='px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-md transition dark:bg-darkAccent dark:hover:bg-gray-600'>SIGN IN</button>
                 <p>
-                    Don't have an account? <Link to='/register'>Create one</Link>
+                    Don't have an account? <Link to='/register' className='text-blue-500 hover:text-blue-600 underline transition dark:text-darkAccent dark:hover:text-gray-500 underline'>Create one</Link>
                 </p>
             </form>
         </main>
