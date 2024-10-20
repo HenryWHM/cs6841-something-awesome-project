@@ -1,0 +1,18 @@
+/* Custom styling for the time input clock icon */
+input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(100%); /* Black for light mode */
+  }
+
+  .dark input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0%); /* White for dark mode */
+  }
+
+  /* Style the date picker icon (for Webkit-based browsers) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(100%); /* Black icon for light mode */
+  }
+
+  /* Style the date picker icon for dark mode */
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0%); /* White icon for dark mode */
+  }
