@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Context, useContext } from '../context';
+import { Context, useContext } from '../../context';
 
 const SettingsPage = () => {
   const { getters, setters } = useContext(Context);

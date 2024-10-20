@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useContext, Context } from '../context';
+import { useContext, Context } from '../../context';
 
 const HomePage = () => {
   const { getters } = useContext(Context);

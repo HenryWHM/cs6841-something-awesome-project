@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Context } from '../context';
+import { Context } from '../../context';
 import '../styles/SchedulePage.css';  // Adjust the path accordingly
 
 const SchedulePage = () => {
