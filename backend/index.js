@@ -30,6 +30,19 @@ app.post("/api/register", async(req, res) => {
     res.json({ error_message: "User already exists", });
 });
 
+app.post("/api/login", (req, res) => {
+    const { email, password } = req.body;
+    const result = users.filter((user) => user.email === email && user.password === password);
+    if (!result) {
+        return res.json({ error_message: "Incorrect credentials", });
+    }
+    // Returns the id if successfully logged in
+    res.json({
+        message: "Login successfully",
+        id: result[0].id,
+    });
+});
+
 
 
 app.listen(PORT, () => {
