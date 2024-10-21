@@ -1,30 +1,35 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const navigate = useNavigate();
-const signUp = () => {
-    fetch("http://localhost:4000/api/register", {
-        method: "POST",
-        body: JSON.stringify({
-            email,
-            password,
-            username,
-        }),
-        headers: {
-            "Content-Type": "application/json",
-        },
-    })
-        .then((res) => res.json())
-        .then((data) => {
-            console.log(data);
-        })
-        .catch((err) => console.err(err));
-};
-
 const Register = () => {
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const navigate = useNavigate();
+
+    const signUp = () => {
+        fetch("http://localhost:4000/api/register", {
+            method: "POST",
+            body: JSON.stringify({
+                email,
+                password,
+                username,
+            }),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                if (data.error_message) {
+                    alert(data.error_message);
+                } else {
+                    alert("Account created successfully!");
+                    navigate("/");
+                }
+            })
+            .catch((err) => console.err(err));
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
