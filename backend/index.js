@@ -1,8 +1,18 @@
+const dotenv = require("dotenv");
+dotenv.config({ path: './.env'})
+
+
 const express = require("express");
 const cors = require("cors");
+const mysql = require("mysql");
 const app = express();
+const db = mysql.createConnection({
+    host: process.env.DATABASE_HOST,
+    user: process.env.DATABASE_USER,
+    database: process.env.DATABASE
+})
+
 const PORT = 4000;
-const userRoutes = require("./src/routes/userRoutes");
 const users = [];
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
@@ -10,6 +20,14 @@ const bcrypt = require('bcrypt');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
+
+db.connect((error) => {
+    if (error) {
+        console.log(error)
+    } else {
+        console.log("MySQL connected...")
+    }
+})
 
 app.get("/api", (req, res) => {
     res.json({
