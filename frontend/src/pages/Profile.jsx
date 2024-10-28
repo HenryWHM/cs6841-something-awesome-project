@@ -2,26 +2,58 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const Profile = () => {
-    // Assuming you fetch the logged-in user info from somewhere, like an API
+    const userId = localStorage.getItem("userId"); // Retrieve userId stored after login
     const [username, setUsername] = useState("Your Username");
     const [aboutMe, setAboutMe] = useState("Write something about yourself...");
     const [profilePic, setProfilePic] = useState(null); // For profile pic upload
     const [isAdmin, setIsAdmin] = useState(false); // Assume admin privileges
 
-    const navigate = useNavigate();
-    const { id } = useParams(); // Get user ID from URL params
+    // Load profile data on component mount
+    useEffect(() => {
+        fetch(`api/user/profile/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                setProfilePic(data.profile_pic || '');
+                setAboutMe(data.about_me || '');
+            })
+            .catch(error => console.error("Error loading profile:", error));
+    }, [userId]);
 
-    // Function to handle profile picture upload
+    // Save profile data
+    const saveProfile = () => {
+        fetch(`/api/user/profile/${userId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profile_pic: profilePic, about_me: aboutMe })
+        })
+        .then(response => response.json())
+        .then(data => alert(data.message))
+        .catch(error => console.error("Error saving profile:", error));
+    };
+
     const handleProfilePicChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setProfilePic(URL.createObjectURL(file)); // Show preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setProfilePic(reader.result);
+            };
+            reader.readAsDataURL(file);
         }
     };
 
-    // Handle saving About Me changes (could be saved to a server)
+    // Clear profile picture
+    const clearProfilePic = () => {
+        setProfilePic('');
+    };
+
     const handleAboutMeChange = (e) => {
         setAboutMe(e.target.value);
+    };
+
+    // Clear about me
+    const clearAboutMe = () => {
+        setAboutMe('');
     };
 
     // Navigate to Forum or Productivity App
@@ -50,6 +82,12 @@ const Profile = () => {
                             onChange={handleProfilePicChange}
                             className="mt-2"
                         />
+                        <button
+                            onClick={clearProfilePic}
+                            className="mt-2 px-4 py-1 bg-red-500 text-white rounded-lg text-sm"
+                        >
+                            Clear Profile Picture
+                        </button>
                     </div>
 
                     {/* Username */}
@@ -70,6 +108,18 @@ const Profile = () => {
                             onChange={handleAboutMeChange}
                             className="w-full p-3 border rounded-lg mt-2 bg-gray-50 dark:bg-gray-700 dark:text-white"
                         />
+                        <button
+                            onClick={clearAboutMe}
+                            className="mt-2 px-4 py-1 bg-red-500 text-white rounded-lg text-sm"
+                        >
+                            Clear About Me
+                        </button>
+                        <button
+                            onClick={saveProfile}
+                            className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-md transition"
+                        >
+                            Save Profile
+                        </button>
                     </div>
 
                     {/* Navigation Buttons */}

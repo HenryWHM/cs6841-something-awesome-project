@@ -3,6 +3,7 @@ dotenv.config({ path: './.env'})
 
 
 const express = require("express");
+const authenticateToken = require("./authMiddleware");
 const cors = require("cors");
 const mysql = require("mysql");
 const app = express();
@@ -96,15 +97,46 @@ app.post("/api/login", (req, res) => {
                 return res.json({ error_message: 'Incorrect credentials' });
             }
 
-            // Returns the id if successfully logged in
-            res.json({
-                message: "Login successfully",
-                id: user.id,
-            });
+            // Generate JWT token
+            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+            res.json({ message: "Login successful", token });
         });
     });
 });
 
+app.get("/api/user/profile", authenticateToken, (req, res) => {
+    const userId = req.user.userId;
+    const sql = "SELECT username, email, profile_pic, about_me, FROM users WHERE id = ?";
+
+    db.query(sql, [userId], (err, result) => {
+        if (err) {
+            console.error("Error fetching user profile:", err);
+            return res.json({ error_message: "Internal server error" });
+        }
+
+        // Check if the user was found
+        if (result.length === 0) {
+            return res.json({ error_message: "User not found" });
+        }
+
+        res.json(result[0]);
+    });
+});
+
+// Update user profile data (only updates `profile_pic` and `about_me`)
+app.get("/api/user/profile/:userId", (req, res) => {
+    const { userId } = req.params;
+    const { profile_pic, about_me } = req.body;
+    const updateSQL = `UPDATE accounts SET profile_pic = ?, about_me = ? WHERE id = ?`;
+
+    db.query(updateSQL, [profile_pic, about_me, userId], (err) => {
+        if (err) {
+            console.error("Error updating profile:", err);
+            return res.json({ error_message: "Internal server error" });
+        }
+        res.json( {message: "Profile updated successfully" });
+    });
+});
 
 
 app.listen(PORT, () => {
