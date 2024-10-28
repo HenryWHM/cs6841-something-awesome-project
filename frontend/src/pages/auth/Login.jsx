@@ -23,8 +23,10 @@ const Login = () => {
                     alert(data.error_message);
                 } else {
                     alert(data.message);
-                    navigate("/dashboard");
+                    // Store user ID in localStorage
                     localStorage.setItem("_id", data.id);
+                    // Redirect to profile page
+                    navigate(`/profile/${data.id}`);
                 }
             })
             .catch((err) => console.error(err));

@@ -9,11 +9,11 @@ const app = express();
 const db = mysql.createConnection({
     host: process.env.DATABASE_HOST,
     user: process.env.DATABASE_USER,
+    password: process.env.DATABASE_PASSWORD,
     database: process.env.DATABASE
 })
 
 const PORT = 4000;
-const users = [];
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
 
@@ -37,27 +37,71 @@ app.get("/api", (req, res) => {
 
 app.post("/api/register", async(req, res) => {
     const { email, password, username } = req.body;
-    const result = users.filter((user) => user.email === email && user.password === password);
-    if (!result) {
-        const id = uuidv4();
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = { id, email, password: hashedPassword, username };
-        users.push(newUser);
-        return res.json({ message: "Account created successfully!" });
-    }
-    res.json({ error_message: "User already exists", });
+    // Check if the email is already in the database
+    const checkSQL = "SELECT * FROM accounts WHERE email = ?";
+    db.query(checkSQL, [email], (err, result) => {
+        if (err) {
+            console.error('Database error during email check:', err);
+            return res.json({ error_message: "Database error during email check." });
+        }
+        if (result.length > 0) {
+            console.error('Email already exists.');
+            return res.json({ error_message: "Email already exists." });
+        } else {
+            const id = uuidv4();
+            bcrypt.hash(password, 10, (err, hashedPassword) => {
+                if (err) {
+                    console.error('Error hashing password:', err);
+                    return res.json({ error_message: "Error hashing password." });
+                }
+                const details = [id, username, email, hashedPassword];
+                // Insert the new user into the database with UUID
+                const insertSQL = "INSERT INTO accounts (`id`, `username`, `email`, `password`) VALUES (?, ?, ?, ?)";
+                db.query(insertSQL, details, (err, data) => {
+                    if (err) {
+                        console.error('Error in creating account:', err);
+                        return res.json({ error_message: "Error in creating account" });
+                    }
+                    console.log('Success: Created new account!');
+                    return res.json({ message: "Account created successfully!" });
+                });
+            });
+        };
+    });
 });
 
 app.post("/api/login", (req, res) => {
     const { email, password } = req.body;
-    const result = users.filter((user) => user.email === email && user.password === password);
-    if (!result) {
-        return res.json({ error_message: "Incorrect credentials", });
-    }
-    // Returns the id if successfully logged in
-    res.json({
-        message: "Login successfully",
-        id: result[0].id,
+    const sql = 'SELECT * FROM accounts WHERE email = ?';
+    db.query(sql, [email], (err, results) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.json({ error_message: 'Internal server error' });
+        }
+
+        if (results.length === 0) {
+            console.error('Incorrect credentials');
+            return res.json( { error_message: 'Incorrect credentials' });
+        }
+
+        const user = results[0];
+        bcrypt.compare(password, user.password_hash, (err, isMatch) => {
+            if (err) {
+              console.error('Bcrypt error:', err);
+              return res.json({ error_message: 'Internal server error' });
+            }
+
+            if (!isMatch) {
+                console.error('Incorrect credentials');
+                return res.json({ error_message: 'Incorrect credentials' });
+            }
+
+            // Returns the id if successfully logged in
+            res.json({
+                message: "Login successfully",
+                id: user.id,
+            });
+        });
     });
 });
 

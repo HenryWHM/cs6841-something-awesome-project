@@ -28,7 +28,7 @@ const Register = () => {
                     navigate("/");
                 }
             })
-            .catch((err) => console.err(err));
+            .catch((err) => console.error(err));
     };
 
     const handleSubmit = (e) => {

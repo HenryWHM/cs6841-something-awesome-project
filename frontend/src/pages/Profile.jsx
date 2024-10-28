@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const Profile = () => {
     // Assuming you fetch the logged-in user info from somewhere, like an API
@@ -9,19 +9,7 @@ const Profile = () => {
     const [isAdmin, setIsAdmin] = useState(false); // Assume admin privileges
 
     const navigate = useNavigate();
-
-    // Example: Simulate fetching user data (including admin status)
-    useEffect(() => {
-        // Simulate fetching user data
-        const userData = {
-            username: "YourUsername",
-            aboutMe: "I'm the admin of this page.",
-            isAdmin: true, // Assume this is fetched
-        };
-        setUsername(userData.username);
-        setAboutMe(userData.aboutMe);
-        setIsAdmin(userData.isAdmin);
-    }, []);
+    const { id } = useParams(); // Get user ID from URL params
 
     // Function to handle profile picture upload
     const handleProfilePicChange = (e) => {
@@ -50,7 +38,7 @@ const Profile = () => {
             <div className="bg-white dark:bg-gray-900 shadow-lg rounded-lg p-8 max-w-lg w-full">
                 <div className="flex flex-col items-center">
                     {/* Profile Picture */}
-                    <div className="relative">
+                    <div className="flex flex-col items-center justify-center">
                         <img
                             src={profilePic || "https://via.placeholder.com/150"} // Default or uploaded image
                             alt="Profile"
