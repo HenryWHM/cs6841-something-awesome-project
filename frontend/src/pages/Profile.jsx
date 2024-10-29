@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 const Profile = () => {
-    const userId = localStorage.getItem("userId"); // Retrieve userId stored after login
+    const navigate = useNavigate();
+    const { id } = useParams(); // Get user ID from URL if needed
     const [username, setUsername] = useState("Your Username");
     const [aboutMe, setAboutMe] = useState("Write something about yourself...");
     const [profilePic, setProfilePic] = useState(null); // For profile pic upload
@@ -10,42 +11,86 @@ const Profile = () => {
 
     // Load profile data on component mount
     useEffect(() => {
-        fetch(`api/user/profile/${userId}`)
-            .then(response => response.json())
-            .then(data => {
-                setProfilePic(data.profile_pic || '');
-                setAboutMe(data.about_me || '');
-            })
-            .catch(error => console.error("Error loading profile:", error));
-    }, [userId]);
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("You are not logged in.");
+            navigate("/");
+            return;
+        }
 
-    // Save profile data
-    const saveProfile = () => {
-        fetch(`/api/user/profile/${userId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ profile_pic: profilePic, about_me: aboutMe })
+        fetch(`http://localhost:4000/api/user/profile/${id}`, {
+            headers: {
+                'Authentication': `Bearer ${token}`
+            }
         })
-        .then(response => response.json())
-        .then(data => alert(data.message))
-        .catch(error => console.error("Error saving profile:", error));
-    };
+            .then((response) => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error("Unauthorized");
+                }
+            })
+            .then((data) => {
+                setUsername(data.username || "Your Username");
+                setProfilePic(data.profile_pic ? `http://localhost:4000${data.profile_pic}` : '');
+                setAboutMe(data.about_me || '');
+                setIsAdmin(data.isAdmin || false);
+            })
+            .catch((error) => {
+                console.error("Error loading profile:", error);
+                navigate("/");
+            });
+    }, [id, navigate]);
 
-    const handleProfilePicChange = (e) => {
+    const handleProfilePicUpload = (e) => {
         const file = e.target.files[0];
+        const token = localStorage.getItem("token");
+
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProfilePic(reader.result);
-            };
-            reader.readAsDataURL(file);
+            const formData = new FormData();
+            formData.append('profilePic', file);
+
+            fetch(`http://localhost:4000/api/user/profile/upload/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.profile_pic) {
+                        setProfilePic(`http://localhost:4000${data.profile_pic}`); // Update UI with new profile picture
+                    } else {
+                        console.error("Failed to update profile picture:", data.error_message);
+                    }
+                })
+                .catch(error => console.error("Error uploading profile picture:", error));
+        } else {
+            console.error("No file selected");
         }
     };
 
-    // Clear profile picture
     const clearProfilePic = () => {
-        setProfilePic('');
+        const token = localStorage.getItem("token");
+
+        fetch(`http://localhost:4000/api/user/profile/clear/${id}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                setProfilePic(''); // Clear the profile picture in the UI
+            })
+            .catch(error => console.error("Error clearing profile picture:", error));
     };
+
+
+
+
+
 
     const handleAboutMeChange = (e) => {
         setAboutMe(e.target.value);
@@ -79,7 +124,7 @@ const Profile = () => {
                         <input
                             type="file"
                             accept="image/*"
-                            onChange={handleProfilePicChange}
+                            onChange={handleProfilePicUpload}
                             className="mt-2"
                         />
                         <button
@@ -113,12 +158,6 @@ const Profile = () => {
                             className="mt-2 px-4 py-1 bg-red-500 text-white rounded-lg text-sm"
                         >
                             Clear About Me
-                        </button>
-                        <button
-                            onClick={saveProfile}
-                            className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-md transition"
-                        >
-                            Save Profile
                         </button>
                     </div>
 

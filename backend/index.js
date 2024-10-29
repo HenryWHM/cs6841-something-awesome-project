@@ -18,10 +18,25 @@ const PORT = 4000;
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const multer = require('multer');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors());
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, path.join(__dirname, '../uploads')); // Save files in an 'uploads' directory
+    },
+    filename: (req, file, cb) => {
+        const uniqueName = Date.now() + '-' + path.extname(file.originalname);
+        cb(null, uniqueName);
+    }
+});
+
+const upload = multer({ storage });
 
 db.connect((error) => {
     if (error) {
@@ -102,42 +117,61 @@ app.post("/api/login", (req, res) => {
 
             // Generate JWT token
             const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-            res.json({ message: "Login successful", token });
+            console.log("Response JSON:", { message: "Login successful", token, id: user.id });
+            res.json({ message: "Login successful", token, id: user.id });
         });
     });
 });
 
-app.get("/api/user/profile", authenticateToken, (req, res) => {
-    const userId = req.user.userId;
-    const sql = "SELECT username, email, profile_pic, about_me, FROM users WHERE id = ?";
+app.get('/api/user/profile/:id', authenticateToken, (req, res) => {
+    const userId = req.params.id;
 
-    db.query(sql, [userId], (err, result) => {
-        if (err) {
-            console.error("Error fetching user profile:", err);
-            return res.json({ error_message: "Internal server error" });
-        }
-
-        // Check if the user was found
-        if (result.length === 0) {
+    getUserProfileById(userId)
+    .then((userProfile) => {
+        if (!userProfile) {
             return res.json({ error_message: "User not found" });
         }
-
-        res.json(result[0]);
+    res.json({
+        username: userProfile.username,
+        profile_pic: userProfile.profile_pic,
+        about_me: userProfile.about_me,
+        isAdmin: userProfile.isAdmin,
     });
+})
+    .catch((error) => {
+        console.error("Error fetching profile:", error);
+        res.json({ error_message: "Internal server error" });
+    });
+})
+
+app.post('/api/user/profile/upload/:id', authenticateToken, upload.single('profilePic'), (req, res) => {
+    const userId = req.params.id;
+    if (!req.file) {
+        return res.json({ error_message: "No file uploaded" });
+    }
+    // Save the file path in the database
+    const profilePicPath = `/uploads/${req.file.filename}`;
+    const updateSQL = "UPDATE accounts SET profile_pic = ? WHERE id = ?";
+
+    db.query(updateSQL, [profilePicPath, userId], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.json({ error_message: 'Internal server error' });
+        }
+        res.json({ message: "Profile picture updated", profile_pic: profilePicPath });
+    })
 });
 
-// Update user profile data (only updates `profile_pic` and `about_me`)
-app.get("/api/user/profile/:userId", (req, res) => {
-    const { userId } = req.params;
-    const { profile_pic, about_me } = req.body;
-    const updateSQL = `UPDATE accounts SET profile_pic = ?, about_me = ? WHERE id = ?`;
+app.post('/api/user/profile/clear/:id', authenticateToken, (req, res) => {
+    const userId = req.params.id;
 
-    db.query(updateSQL, [profile_pic, about_me, userId], (err) => {
+    const updateSQL = 'UPDATE accounts SET profile_pic = NULL WHERE id = ?';
+    db.query(updateSQL, [userId], (err, result) => {
         if (err) {
-            console.error("Error updating profile:", err);
-            return res.json({ error_message: "Internal server error" });
+            console.error('Database error:', err);
+            return res.status(500).json({ error_message: 'Internal server error' });
         }
-        res.json( {message: "Profile updated successfully" });
+        res.json({ message: 'Profile picture cleared' });
     });
 });
 
@@ -145,3 +179,5 @@ app.get("/api/user/profile/:userId", (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
 });
+
+module.exports = db;

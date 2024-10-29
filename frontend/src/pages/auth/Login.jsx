@@ -19,14 +19,20 @@ const Login = () => {
         })
             .then((res) => res.json())
             .then((data) => {
+                console.log(data);
                 if (data.error_message) {
                     alert(data.error_message);
                 } else {
                     alert(data.message);
-                    // Store user ID in localStorage
+                    // Store JWT token in localStorage
+                    localStorage.setItem("token", data.token);
                     localStorage.setItem("_id", data.id);
-                    // Redirect to profile page
-                    navigate(`/profile/${data.id}`);
+                    // Redirect to profile page with user ID (can pass as URL param if needed)
+                    if (data.id) {
+                        navigate(`/profile/${data.id}`);
+                    } else {
+                        console.error("User ID is undefined in login response.");
+                    }
                 }
             })
             .catch((err) => console.error(err));
