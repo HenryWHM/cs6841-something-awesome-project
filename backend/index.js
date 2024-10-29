@@ -17,6 +17,7 @@ const db = mysql.createConnection({
 const PORT = 4000;
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -86,7 +87,9 @@ app.post("/api/login", (req, res) => {
         }
 
         const user = results[0];
-        bcrypt.compare(password, user.password_hash, (err, isMatch) => {
+        console.log('User data:', user);
+
+        bcrypt.compare(password, user.password, (err, isMatch) => {
             if (err) {
               console.error('Bcrypt error:', err);
               return res.json({ error_message: 'Internal server error' });
