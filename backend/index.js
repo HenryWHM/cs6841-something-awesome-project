@@ -1,5 +1,5 @@
 const dotenv = require("dotenv");
-dotenv.config({ path: './.env'})
+dotenv.config({ path: './.env'});
 
 
 const express = require("express");
@@ -20,6 +20,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const path = require('path');
 const multer = require('multer');
+const hardcodedSecret = "m4npHyvEiijWJiUoJW1J";
+const { getUserProfileById } = require('./userService');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -116,7 +118,7 @@ app.post("/api/login", (req, res) => {
             }
 
             // Generate JWT token
-            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+            const token = jwt.sign({ userId: user.id }, hardcodedSecret, { expiresIn: '1h' });
             console.log("Response JSON:", { message: "Login successful", token, id: user.id });
             res.json({ message: "Login successful", token, id: user.id });
         });
@@ -172,6 +174,20 @@ app.post('/api/user/profile/clear/:id', authenticateToken, (req, res) => {
             return res.status(500).json({ error_message: 'Internal server error' });
         }
         res.json({ message: 'Profile picture cleared' });
+    });
+});
+
+app.post('/api/user/profile/update-about/:id', authenticateToken, (req, res) => {
+    const userId = req.params.id;
+    const aboutMe = req.body.about_me || ''; // Use an empty string if about_me is not provided
+
+    const updateSQL = "UPDATE accounts SET about_me = ? WHERE id = ?";
+    db.query(updateSQL, [aboutMe, userId], (err, result) => {
+        if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error_message: 'Internal server error' });
+        }
+        res.json({ message: 'About Me updated successfully', about_me: aboutMe });
     });
 });
 

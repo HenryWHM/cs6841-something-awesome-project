@@ -5,12 +5,14 @@ const Profile = () => {
     const navigate = useNavigate();
     const { id } = useParams(); // Get user ID from URL if needed
     const [username, setUsername] = useState("Your Username");
-    const [aboutMe, setAboutMe] = useState("Write something about yourself...");
+    const [aboutMe, setAboutMe] = useState("");
     const [profilePic, setProfilePic] = useState(null); // For profile pic upload
     const [isAdmin, setIsAdmin] = useState(false); // Assume admin privileges
+    const [isModalOpen, setIsModalOpen] = useState(false); // Track modal state
+    const [modalContent, setModalContent] = useState(""); // Track edit content
 
     // Load profile data on component mount
-    useEffect(() => {
+    const fetchProfile = async () => {
         const token = localStorage.getItem("token");
         if (!token) {
             alert("You are not logged in.");
@@ -20,7 +22,7 @@ const Profile = () => {
 
         fetch(`http://localhost:4000/api/user/profile/${id}`, {
             headers: {
-                'Authentication': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`
             }
         })
             .then((response) => {
@@ -40,7 +42,55 @@ const Profile = () => {
                 console.error("Error loading profile:", error);
                 navigate("/");
             });
+    };
+
+    useEffect(() => {
+        fetchProfile();
     }, [id, navigate]);
+
+    // Function to open the modal with existing aboutMe content
+    const openModal = () => {
+        setModalContent(aboutMe); // Set the initial modal content to the current aboutMe
+        setIsModalOpen(true); // Show modal
+    };
+
+    // Function to handle saving the About Me section
+    const saveAboutMe = () => {
+        console.log("saveAboutMe function called with content:", modalContent);
+        const token = localStorage.getItem("token");
+        console.log(token);
+
+        fetch(`http://localhost:4000/api/user/profile/update-about/${id}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ about_me: modalContent })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log("Response from backend:", data); // Log backend response
+            if (data.message) {
+                setAboutMe(modalContent); // Update local state
+                setIsModalOpen(false); // Close modal
+                alert(data.message);
+            } else if (data.error_message === "Token is invalid") {
+                console.log("Hi");
+                localStorage.removeItem("token");
+                // navigate("/");
+            } else {
+                console.error("Error:", data.error_message);
+            }
+        })
+        .catch(error => console.error("Error updating About Me:", error));
+    };
+
+    // Function to clear the About Me section in the database
+    const clearAboutMe = () => {
+        setModalContent(""); // Clear modal content
+        saveAboutMe(""); // Clear the aboutMe content in the database and close modal
+    };
 
     const handleProfilePicUpload = (e) => {
         const file = e.target.files[0];
@@ -87,18 +137,8 @@ const Profile = () => {
             .catch(error => console.error("Error clearing profile picture:", error));
     };
 
-
-
-
-
-
     const handleAboutMeChange = (e) => {
         setAboutMe(e.target.value);
-    };
-
-    // Clear about me
-    const clearAboutMe = () => {
-        setAboutMe('');
     };
 
     // Navigate to Forum or Productivity App
@@ -148,36 +188,51 @@ const Profile = () => {
                     {/* About Me Section */}
                     <div className="w-full mt-6">
                         <h3 className="text-lg font-semibold dark:text-white">About Me</h3>
-                        <textarea
-                            value={aboutMe}
-                            onChange={handleAboutMeChange}
-                            className="w-full p-3 border rounded-lg mt-2 bg-gray-50 dark:bg-gray-700 dark:text-white"
-                        />
+                        <p className="dark:text-gray-300 mb-2">{aboutMe || "No information provided."}</p>
                         <button
-                            onClick={clearAboutMe}
-                            className="mt-2 px-4 py-1 bg-red-500 text-white rounded-lg text-sm"
+                            onClick={openModal}
+                            className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-lg text-sm"
                         >
-                            Clear About Me
-                        </button>
-                    </div>
-
-                    {/* Navigation Buttons */}
-                    <div className="mt-6 w-full flex justify-around">
-                        <button
-                            onClick={goToForum}
-                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg shadow-md transition"
-                        >
-                            Go to Forum
-                        </button>
-                        <button
-                            onClick={goToProductivityApp}
-                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg shadow-md transition"
-                        >
-                            Go to Productivity App
+                            Edit About Me
                         </button>
                     </div>
                 </div>
             </div>
+
+            {/* Modal for Editing "About Me" */}
+            {isModalOpen && (
+                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+                        <h3 className="text-lg font-semibold mb-4 dark:text-white">Edit About Me</h3>
+                        <textarea
+                            value={modalContent}
+                            onChange={(e) => setModalContent(e.target.value)}
+                            className="w-full p-3 border rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white"
+                            rows="4"
+                        />
+                        <div className="flex justify-end mt-4">
+                            <button
+                                onClick={() => setIsModalOpen(false)} // Close modal without saving
+                                className="mr-2 px-4 py-2 bg-gray-400 text-white rounded-lg"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={saveAboutMe} // Save content and close modal
+                                className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                            >
+                                Save
+                            </button>
+                            <button
+                                onClick={clearAboutMe} // Clear content and close modal
+                                className="ml-2 px-4 py-2 bg-red-500 text-white rounded-lg"
+                            >
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
