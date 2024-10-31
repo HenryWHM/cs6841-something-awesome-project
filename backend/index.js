@@ -111,7 +111,7 @@ app.post("/api/login", (req, res) => {
         bcrypt.compare(password, user.password, (err, isMatch) => {
             if (err) {
               console.error('Bcrypt error:', err);
-              return res.json({ error_message: 'Internal server error' });
+              return res.json({ error_message: 'Bcrypt error' });
             }
 
             if (!isMatch) {
