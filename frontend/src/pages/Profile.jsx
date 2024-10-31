@@ -223,12 +223,6 @@ const Profile = () => {
                             >
                                 Save
                             </button>
-                            <button
-                                onClick={clearAboutMe} // Clear content and close modal
-                                className="ml-2 px-4 py-2 bg-red-500 text-white rounded-lg"
-                            >
-                                Clear
-                            </button>
                         </div>
                     </div>
                 </div>

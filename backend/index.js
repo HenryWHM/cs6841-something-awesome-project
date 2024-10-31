@@ -11,7 +11,8 @@ const db = mysql.createConnection({
     host: process.env.DATABASE_HOST,
     user: process.env.DATABASE_USER,
     password: process.env.DATABASE_PASSWORD,
-    database: process.env.DATABASE
+    database: process.env.DATABASE,
+    multipleStatements: true // Enables multiStatements for SQLi vulnerability exploit
 })
 
 const PORT = 4000;
@@ -91,15 +92,16 @@ app.post("/api/register", async(req, res) => {
 
 app.post("/api/login", (req, res) => {
     const { email, password } = req.body;
-    const sql = 'SELECT * FROM accounts WHERE email = ?';
-    db.query(sql, [email], (err, results) => {
+    // Directly embedding user input into the query string (insecure)
+    const sql = `SELECT * FROM accounts WHERE email = '${email}'`;
+    db.query(sql, (err, results) => { // Removed parameter array `[email]`
         if (err) {
             console.error('Database error:', err);
             return res.json({ error_message: 'Internal server error' });
         }
 
         if (results.length === 0) {
-            console.error('Incorrect credentials');
+            console.log('Incorrect credentials:', results);
             return res.json( { error_message: 'Incorrect credentials' });
         }
 
@@ -113,7 +115,7 @@ app.post("/api/login", (req, res) => {
             }
 
             if (!isMatch) {
-                console.error('Incorrect credentials');
+                console.error('Plaintext password does not match bcrypted password.');
                 return res.json({ error_message: 'Incorrect credentials' });
             }
 
