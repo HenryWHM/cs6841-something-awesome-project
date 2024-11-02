@@ -6,6 +6,7 @@ const Profile = () => {
     const { id } = useParams(); // Get user ID from URL if needed
     const [username, setUsername] = useState("Your Username");
     const [aboutMe, setAboutMe] = useState("");
+    const [loading, setLoading] = useState(true);
     const [profilePic, setProfilePic] = useState(null); // For profile pic upload
     const [isAdmin, setIsAdmin] = useState(false); // Assume admin privileges
     const [isModalOpen, setIsModalOpen] = useState(false); // Track modal state
@@ -42,6 +43,35 @@ const Profile = () => {
                 console.error("Error loading profile:", error);
                 navigate("/");
             });
+    };
+
+    const handleAboutMeChange = async (newAboutMe) => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert("You are not logged in.");
+            navigate("/");
+            return;
+        };
+
+        try {
+            const response = await fetch(`http://localhost:4000/api/user/profile/update-about/${id}`, {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ about_me: newAboutMe }),
+            });
+
+            if (response.ok) {
+                // Successfully updated; now re-fetch profile to confirm update
+                await fetchProfile();  // Call to re-fetch and set the latest profile data in state
+            } else {
+                console.error("Failed to update About Me section");
+            }
+        } catch (error) {
+            console.error("Error updating About Me:", error);
+        }
     };
 
     useEffect(() => {
@@ -135,10 +165,6 @@ const Profile = () => {
                 setProfilePic(''); // Clear the profile picture in the UI
             })
             .catch(error => console.error("Error clearing profile picture:", error));
-    };
-
-    const handleAboutMeChange = (e) => {
-        setAboutMe(e.target.value);
     };
 
     // Navigate to Forum or Productivity App
