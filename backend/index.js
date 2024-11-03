@@ -28,6 +28,7 @@ app.use(express.json());
 app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, path.join(__dirname, '../uploads')); // Save files in an 'uploads' directory
@@ -181,16 +182,17 @@ app.post('/api/user/profile/update-about/:id', authenticateToken, (req, res) => 
     const userId = req.params.id;
     const aboutMe = req.body.about_me || ''; // Use an empty string if about_me is not provided
 
+    console.log("About Me content:", aboutMe);
+
     const updateSQL = "UPDATE accounts SET about_me = ? WHERE id = ?";
     db.query(updateSQL, [aboutMe, userId], (err, result) => {
         if (err) {
             console.error('Database error:', err);
             return res.status(500).json({ error_message: 'Internal server error' });
         }
-        res.json({ message: 'About Me updated successfully', about_me: aboutMe });
+        res.json({ message: 'About me updated successfully', about_me: aboutMe });
     });
 });
-
 
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);

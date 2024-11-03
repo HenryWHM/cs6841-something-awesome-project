@@ -214,7 +214,9 @@ const Profile = () => {
                     {/* About Me Section */}
                     <div className="w-full mt-6">
                         <h3 className="text-lg font-semibold dark:text-white">About Me</h3>
-                        <p className="dark:text-gray-300 mb-2">{aboutMe || "No information provided."}</p>
+                        <div
+                            className="dark:text-gray-300 mb-2"
+                            dangerouslySetInnerHTML={{ __html: aboutMe || "No information provided." }} />
                         <button
                             onClick={openModal}
                             className="mt-2 px-4 py-1 bg-blue-500 text-white rounded-lg text-sm"
