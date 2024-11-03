@@ -191,6 +191,18 @@ app.post('/api/user/profile/update-about/:id', authenticateToken, (req, res) => 
     });
 });
 
+app.post("/api/user/delete-account", authenticateToken, (req, res) => {
+    const userId = req.user.id;
+    const deleteQuery = "DELETE FROM accounts WHERE id = ?";
+
+    db.query(deleteQuery, [userId], (err, result) => {
+        if (err) {
+            console.error("Error deleting account:", err);
+            return res.json({ error_message: "Internal server error" });
+        }
+        return res.json({ message: "Account deleted successfully." });
+    });
+});
 
 app.listen(PORT, () => {
     console.log(`Server listening on ${PORT}`);
