@@ -179,6 +179,7 @@ app.post('/api/user/profile/clear/:id', authenticateToken, (req, res) => {
 
 app.post('/api/user/profile/update-about/:id', authenticateToken, (req, res) => {
     const userId = req.params.id;
+    console.log(userId);
     const aboutMe = req.body.about_me || ''; // Use an empty string if about_me is not provided
 
     const updateSQL = "UPDATE accounts SET about_me = ? WHERE id = ?";
@@ -191,8 +192,9 @@ app.post('/api/user/profile/update-about/:id', authenticateToken, (req, res) => 
     });
 });
 
-app.post("/api/user/delete-account", authenticateToken, (req, res) => {
-    const userId = req.user.id;
+app.post("/api/user/profile/delete-account/:id", authenticateToken, (req, res) => {
+    const userId = req.params.id;
+    console.log(userId);
     const deleteQuery = "DELETE FROM accounts WHERE id = ?";
 
     db.query(deleteQuery, [userId], (err, result) => {
